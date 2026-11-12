@@ -1,0 +1,14 @@
+.DS_Store
+__pycache__/
+*.py[cod]
+.venv/
+.env
+.env.*
+*.log
+.private/
+profiles/
+packets/
+output/
+captures/
+*manifest*.json
+*.zip

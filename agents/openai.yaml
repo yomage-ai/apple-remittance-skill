@@ -1,0 +1,6 @@
+interface:
+  display_name: "苹果打款完整材料"
+  short_description: "实时截取七张苹果网页截图，生成两份Word并核对全部九份材料"
+  default_prompt: "使用 $artifact-template-apple-remittance-invoice，为指定付款日实时截七张网页图、生成形式发票与情况说明，并核对完整九份材料。"
+policy:
+  allow_implicit_invocation: true

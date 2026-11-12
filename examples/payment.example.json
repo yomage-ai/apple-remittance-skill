@@ -1,0 +1,24 @@
+{
+  "schema_version": 1,
+  "payment_date": "2026-02-05",
+  "report_month": "2026-01",
+  "currency": "CNY",
+  "amount": "123.45",
+  "transaction_id": "DEMO-TRANSACTION",
+  "vendor_id": "DEMO-VENDOR",
+  "vendor_name": "Example Technology Co., Ltd.",
+  "status": "paid",
+  "agreement_verified": true,
+  "receipt_confirmed": false,
+  "carried_forward": false,
+  "payout_rows": [
+    {
+      "currency": "CNY",
+      "amount": "23.45"
+    },
+    {
+      "currency": "CNY",
+      "amount": "100.00"
+    }
+  ]
+}

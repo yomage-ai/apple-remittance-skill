@@ -1,0 +1,22 @@
+{
+  "schema_version": 1,
+  "invoice_prefix": "INV-APPLE",
+  "company": {
+    "english_name": "Example Technology Co., Ltd.",
+    "local_name": "示例科技有限公司",
+    "address": "Example business address"
+  },
+  "apple": {
+    "developer_account": "developer@example.invalid",
+    "recipient_name": "Example Apple Contracting Entity",
+    "payer_statement_name": "EXAMPLE APPLE PAYER",
+    "contract_party": "示例Apple签约主体"
+  },
+  "bank": {
+    "beneficiary": "Example Technology Co., Ltd.",
+    "name": "Example Bank",
+    "account": "DEMO-ACCOUNT",
+    "currency": "CNY",
+    "cnaps": "DEMO-CNAPS"
+  }
+}
