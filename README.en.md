@@ -6,7 +6,7 @@ Copy this request to Codex to install:
 
 # Apple Remittance Packet
 
-Prepare bank materials for Apple App revenue. Give Codex the payment date or its folder; it visits your authorized Apple account, captures fresh screenshots, generates a pro forma invoice and a situation statement, and checks dates, amounts, entities and bank details.
+Prepare bank materials for Apple App revenue. Tell the skill which payment to prepare. It opens the Apple website, guides you through login when needed, reads the account data, captures screenshots, generates a pro forma invoice and a situation statement, and checks the complete packet.
 
 Intended for organization developers preparing company bank-receipt materials in mainland China.
 
@@ -14,9 +14,15 @@ Intended for organization developers preparing company bank-receipt materials in
 
 After installation, start a new task:
 
-> Use the Apple remittance skill to prepare and verify all materials for the 5 February 2026 payment. My reference files are in this folder, and the browser is signed in to my developer account.
+> Use the Apple remittance skill to prepare bank-receipt materials for my most recent Apple payment.
 
-For first use, provide your existing bank materials or the bank's requirements; a previously accepted packet is helpful. The Agent handles dependencies, data preparation, screenshots, Word generation and checks. You only need to intervene for personal login, verification or authorization when required.
+No reference folder, previous packet, template or advance login is required. To prepare a specific payment instead, include its payment date.
+
+1. The skill opens App Store Connect. If you are not signed in, complete login and verification on the Apple page it opens.
+2. The Agent finds the most recent paid transaction or the date you requested. It asks you to choose only when several teams or payments make the target ambiguous.
+3. The Agent reads company, agreement, bank and payment data from the website, generates documents using the included templates, creates the output folder and verifies the packet.
+
+Previously accepted samples and bank-specific requirements are optional references. The Agent handles environment checks, dependencies, screenshots and documents, and asks for additional facts only when essential information cannot actually be obtained from the account.
 
 ## What you receive
 

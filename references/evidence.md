@@ -1,5 +1,11 @@
 # Page and fact acceptance / 页面与事实验收
 
+## Starting from no reference materials / 无旧资料开始
+
+The Agent opens `https://appstoreconnect.apple.com/`, checks login and prepares the actual official page for user login only when necessary. Reference files and advance login are not required. Find the latest paid transaction or match the specified payment date, resolve genuine team/payment ambiguity, then read and capture these pages. Existing samples and bank instructions are optional.
+
+Actual backend login is distinct from screenshot 06: complete necessary user login in the working session first, then use a separate private window only for the empty-password login screenshot. Never sign out of a working session to create that image.
+
 ## Seven fresh pages / 七页实时截图
 
 | Filename | Live content that must be readable |

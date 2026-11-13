@@ -1,6 +1,12 @@
 # Local data and templates / 私有数据与模板
 
-Agent creates these files outside the shared repository, from the current user's actual evidence. `examples/*.example.json` are fictitious schema illustrations, never defaults for a real packet. Do not ask users to edit JSON; ask only for genuinely missing business facts or authorization.
+Agent creates these files outside the shared repository from the current user's live account data; they are internal working files, not user-supplied prerequisites. `examples/*.example.json` are fictitious schema illustrations, never defaults for a real packet. Do not ask users to edit JSON; ask only for genuinely missing business facts or authorization.
+
+## First use without files / 没有资料的首次使用
+
+Open App Store Connect and inspect the current session. If login is needed, keep the official page ready for the user to complete login/verification; do not ask them to sign in beforehand or send credentials in chat. Verify the actual account and company afterward. Find the latest paid transaction unless the user specified a date, and ask only when team/payment selection remains ambiguous.
+
+Read company, full bank-account/holder and payment facts from their live pages; inspect existing signed agreements for the Apple legal party. Create the local profile/payment JSON and dated output folder yourself. A missing local profile is normal on first use. Start from the bundled anonymous templates when no personal template exists. Never demand a previous invoice, screenshots, reference folder or bank checklist as a prerequisite. If an essential fact cannot be read after the relevant source has been inspected, ask only for that missing fact. Without bank-receipt evidence use `receipt_confirmed: false` and payment-report wording. Optional accepted materials may refine the layout later.
 
 ## Profile and payment
 
