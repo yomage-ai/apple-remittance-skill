@@ -44,6 +44,17 @@ def money(value, allow_negative=False):
     return result
 
 
+def party_facts(profile):
+    """An unknown legal party stays unknown; a platform label is not a remitter."""
+    apple = profile['apple']
+    result = {}
+    for key in ['recipient_name', 'payer_statement_name', 'contract_party']:
+        value = apple.get(key)
+        result[key] = None if value is None or value == '' else text(value, 'apple.' + key)
+    result['invoice_party_kind'] = 'legal_entity' if result['recipient_name'] else 'platform'
+    return result
+
+
 def rmb_upper(amount):
     digits = '零壹贰叁肆伍陆柒捌玖'
     def group(n):
@@ -77,9 +88,19 @@ def load_facts(profile_path, payment_path):
     profile, payment = read_json(profile_path), read_json(payment_path)
     if profile.get('schema_version') != 1 or payment.get('schema_version') != 1:
         raise ValueError('Unsupported profile/payment schema; originals are not modified')
-    for section, keys in {'company': ['english_name', 'local_name', 'address'], 'apple': ['developer_account', 'recipient_name', 'payer_statement_name', 'contract_party'], 'bank': ['beneficiary', 'name', 'account', 'currency']}.items():
+    for section, keys in {'company': ['english_name', 'local_name', 'address'], 'apple': ['developer_account'], 'bank': ['beneficiary', 'name', 'account', 'currency']}.items():
         for key in keys:
             text(profile[section][key], section + '.' + key)
+    parties = party_facts(profile)
+    requirements = profile.get('bank_requirements', {})
+    if not isinstance(requirements, dict):
+        raise ValueError('bank_requirements must be an object')
+    for requirement, key in [('remitter_name', 'payer_statement_name'), ('legal_recipient_name', 'recipient_name')]:
+        required = requirements.get(requirement, False)
+        if not isinstance(required, bool):
+            raise ValueError('Bank requirement must be boolean: ' + requirement)
+        if required and not parties[key]:
+            raise ValueError('Bank explicitly requires a verified ' + requirement)
     for key in ['transaction_id', 'vendor_id', 'vendor_name', 'currency', 'payment_date', 'report_month']:
         text(payment[key], key)
     paid = date.fromisoformat(payment['payment_date'])
@@ -111,17 +132,28 @@ def load_facts(profile_path, payment_path):
 
 
 def template_path(profile, kind, profile_path):
+    bundled = ROOT / 'assets' / ('reference.docx' if kind == 'invoice' else 'statement-reference.docx')
     custom = profile.get('templates', {}).get(kind)
     if custom:
         path = Path(custom).expanduser()
-        return path if path.is_absolute() else Path(profile_path).resolve().parent / path
-    return ROOT / 'assets' / ('reference.docx' if kind == 'invoice' else 'statement-reference.docx')
+        path = path if path.is_absolute() else Path(profile_path).resolve().parent / path
+        parties = party_facts(profile)
+        needed = 'recipient_heading'
+        unknown = kind == 'invoice' and not parties['recipient_name']
+        if unknown:
+            with ZipFile(path) as archive:
+                tokens = set(TOKEN.findall(archive.read('word/document.xml').decode('utf-8')))
+            if needed not in tokens:
+                return bundled  # Legacy custom template must not mislabel a platform as a legal entity.
+        return path
+    return bundled
 
 
 def fields(profile, payment):
     day = date.fromisoformat(payment['payment_date'])
     year, month = map(int, payment['report_month'].split('-'))
     company, apple, bank = (profile[key] for key in ['company', 'apple', 'bank'])
+    parties = party_facts(profile)
     currency, amount = payment['currency'], payment['amount']
     full_date = f'{day.day} {MONTHS[day.month-1]} {day.year}'
     carried = payment.get('carried_forward', False)
@@ -130,21 +162,23 @@ def fields(profile, payment):
     prefix = text(profile.get('invoice_prefix', 'INV-APPLE'), 'invoice_prefix')
     invoice_id = f'{prefix}-{day:%Y%m%d}-{payment["transaction_id"]}'
     date_local = f'{day.year}年{day.month}月{day.day}日'
-    if payment['receipt_confirmed']:
-        receipt_start = f'本公司于{date_local}收到{apple["payer_statement_name"]}'
-        receipt_end = f'支付的{year}年{month}月的软件分成，{CURRENCIES[currency]}{amount}元。'
-    else:
-        receipt_start = f'{apple["payer_statement_name"]}付款报告列示，其于{date_local}向本公司支付'
-        receipt_end = f'{year}年{month}月的软件分成，{CURRENCIES[currency]}{amount}元。'
+    # Keep the accepted statement verbatim apart from its factual slots.
+    # APPLE公司 is a general brand reference, not an invented legal remitter name.
+    receipt_start = f'本公司于{date_local}收到{parties["payer_statement_name"] or "APPLE公司"}'
+    receipt_end = f'支付的{year}年{month}月的软件分成，{CURRENCIES[currency]}{amount}元。'
     return {
         'invoice_id': invoice_id, 'issue_day': str(day.day), 'issue_month_year': f' {MONTHS[day.month-1]} {day.year}',
-        'company_english_name': company['english_name'], 'company_local_name': company['local_name'], 'company_address': company['address'], 'recipient_name': apple['recipient_name'],
+        'company_english_name': company['english_name'], 'company_local_name': company['local_name'], 'company_address': company['address'],
+        'recipient_heading': 'To / 对方主体' if parties['recipient_name'] else 'Payment platform / 付款平台',
+        'recipient_name': parties['recipient_name'] or 'Apple App Store',
         'description_english': english, 'description_local': local, 'amount_line': currency + ' ' + amount,
         'amount_words_line': ('人民币大写：' + rmb_upper(Decimal(amount))) if currency == 'CNY' else f'付款币种及金额：{currency} {amount}',
         'payment_date_line': 'Apple payment date: ' + full_date, 'transaction_line': 'Transaction ID: ' + payment['transaction_id'],
         'vendor_line': f'Payment vendor: {payment["vendor_id"]} ({payment["vendor_name"]})',
         'beneficiary_line': 'Beneficiary: ' + bank['beneficiary'], 'bank_line': 'Bank: ' + bank['name'], 'account_line': f'Account: {bank["account"]} | Currency: {bank["currency"]}',
-        'statement_company_start': '本公司' + company['local_name'], 'statement_contract_tail': apple['contract_party'] + '签订协议，根据每月结算单收取软件分成费。',
+        'statement_company_start': '本公司' + company['local_name'],
+        'statement_relation': '与',
+        'statement_contract_tail': 'APPLE公司签订协议，根据每月结算单收取软件分成费。',
         'statement_receipt_start': receipt_start, 'statement_receipt_end': receipt_end,
     }
 
@@ -176,6 +210,8 @@ def filled_xml(source, values, kind):
 
 def create_document(kind, profile_path, payment_path, output):
     profile, payment = load_facts(profile_path, payment_path)
+    if kind == 'statement' and not payment['receipt_confirmed']:
+        raise ValueError('The accepted statement says received; confirm receipt before generating it. Do not rewrite the reference wording.')
     source = template_path(profile, kind, profile_path)
     output = Path(output).resolve()
     if output.exists() or output.suffix.lower() != '.docx' or output == source.resolve():

@@ -30,6 +30,7 @@ class PacketTests(unittest.TestCase):
         self.profile['bank']['beneficiary'] = self.profile['company']['english_name']
         self.profile['bank']['name'] = 'Second Example Bank'
         self.payment['vendor_name'] = self.profile['company']['english_name']
+        self.payment['receipt_confirmed'] = True  # Synthetic test user explicitly confirms receipt.
         self.profile_path, self.payment_path = self.base / 'profile.json', self.base / 'payment.json'
         self.save()
 
@@ -71,10 +72,56 @@ class PacketTests(unittest.TestCase):
         self.assertNotIn('Example Technology Co., Ltd.', content)
         self.assertNotIn('{{', content)
 
-    def test_unconfirmed_receipt_does_not_claim_received(self):
-        content = self.doc_text(self.generate('statement'))
-        self.assertIn('付款报告列示', content)
-        self.assertNotIn('收到', content)
+    def test_unconfirmed_receipt_does_not_rewrite_reference(self):
+        self.payment['receipt_confirmed'] = False
+        self.save()
+        with self.assertRaisesRegex(ValueError, 'confirm receipt'):
+            self.generate('statement')
+        self.assertFalse((self.base / DOCS['statement']).exists())
+
+    def test_unknown_party_names_preserve_reference_sentences(self):
+        self.profile['apple'] = {'developer_account': 'developer@example.invalid'}
+        self.save()
+        invoice = self.doc_text(self.generate('invoice'))
+        statement = self.doc_text(self.generate('statement'))
+        self.assertIn('Payment platform / 付款平台', invoice)
+        self.assertIn('Apple App Store', invoice)
+        self.assertNotIn('To / 对方主体', invoice)
+        self.assertIn('本公司另一家示例企业有限公司与APPLE公司签订协议，根据每月结算单收取软件分成费。', statement)
+        self.assertIn('本公司于2026年2月5日收到APPLE公司 支付的2026年1月的软件分成，人民币123.45元。', statement)
+        self.assertNotIn('付款报告列示', statement)
+        facts = expected_facts(self.profile, self.payment)
+        self.assertIsNone(facts['payer_statement_name'])
+        self.assertIsNone(facts['recipient_name'])
+        self.assertEqual(facts['invoice_party_kind'], 'platform')
+
+    def test_known_names_still_use_entity_and_receipt_wording(self):
+        self.profile['apple'].update(recipient_name='Verified Example Recipient', payer_statement_name='VERIFIED EXAMPLE REMITTER', contract_party='已核实示例签约方')
+        self.payment['receipt_confirmed'] = True
+        self.save()
+        self.assertIn('To / 对方主体', self.doc_text(self.generate('invoice')))
+        self.assertIn('收到VERIFIED EXAMPLE REMITTER', self.doc_text(self.generate('statement')))
+
+    def test_explicit_bank_requirements_still_block_unknown_names(self):
+        for field in ['remitter_name', 'legal_recipient_name']:
+            with self.subTest(field=field):
+                self.profile['bank_requirements'] = {field: True}
+                self.save()
+                with self.assertRaisesRegex(ValueError, 'Bank explicitly requires'):
+                    load_facts(self.profile_path, self.payment_path)
+
+    def test_unknown_names_packet_does_not_claim_entity_verified(self):
+        args, _ = self.packet()
+        result = check(args)
+        self.assertEqual(result['files'], 9)
+        self.assertEqual(result['party_scope']['invoice_party_kind'], 'platform')
+        self.assertIsNone(result['party_scope']['payer_statement_name'])
+
+    def test_unknown_is_not_a_verified_placeholder(self):
+        self.profile['apple']['recipient_name'] = '{{unknown}}'
+        self.save()
+        with self.assertRaises(ValueError):
+            load_facts(self.profile_path, self.payment_path)
 
     def test_confirmed_receipt(self):
         self.payment['receipt_confirmed'] = True
@@ -140,6 +187,13 @@ class PacketTests(unittest.TestCase):
         args, _ = self.packet()
         self.assertEqual(check(args)['files'], 9)
         self.assertIn('not image semantics', check(args)['visual_review'])
+
+    def test_packet_rejects_unconfirmed_receipt(self):
+        args, _ = self.packet()
+        self.payment['receipt_confirmed'] = False
+        self.save()
+        with self.assertRaisesRegex(ValueError, 'Receipt must be confirmed'):
+            check(args)
 
     def test_missing_file_rejected(self):
         args, _ = self.packet()

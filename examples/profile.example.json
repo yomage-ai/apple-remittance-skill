@@ -7,10 +7,7 @@
     "address": "Example business address"
   },
   "apple": {
-    "developer_account": "developer@example.invalid",
-    "recipient_name": "Example Apple Contracting Entity",
-    "payer_statement_name": "EXAMPLE APPLE PAYER",
-    "contract_party": "示例Apple签约主体"
+    "developer_account": "developer@example.invalid"
   },
   "bank": {
     "beneficiary": "Example Technology Co., Ltd.",

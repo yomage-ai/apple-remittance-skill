@@ -8,15 +8,15 @@ from urllib.parse import urlparse
 from xml.etree import ElementTree as ET
 from zipfile import ZipFile
 from PIL import Image
-from packet_data import IMAGES, DOCS, load_facts, fields, filled_xml, template_path, paragraphs_xml, read_json, sha256
+from packet_data import IMAGES, DOCS, load_facts, fields, filled_xml, template_path, paragraphs_xml, read_json, sha256, party_facts
 
 
 def expected_facts(profile, payment):
     facts = {key: payment[key] for key in ['payment_date', 'report_month', 'currency', 'amount', 'transaction_id', 'vendor_id', 'vendor_name']}
     facts.update(company_english_name=profile['company']['english_name'], company_local_name=profile['company']['local_name'],
                  company_address=profile['company']['address'], bank_name=profile['bank']['name'], bank_beneficiary=profile['bank']['beneficiary'],
-                 bank_account=profile['bank']['account'], bank_currency=profile['bank']['currency'], developer_account=profile['apple']['developer_account'],
-                 recipient_name=profile['apple']['recipient_name'], payer_statement_name=profile['apple']['payer_statement_name'])
+                 bank_account=profile['bank']['account'], bank_currency=profile['bank']['currency'], developer_account=profile['apple']['developer_account'])
+    facts.update(party_facts(profile))  # Unknown party values remain null, never an invented verified entity.
     if profile['bank'].get('cnaps'):
         facts['bank_cnaps'] = profile['bank']['cnaps']
     return facts
@@ -24,6 +24,8 @@ def expected_facts(profile, payment):
 
 def check(args):
     profile, payment = load_facts(args.profile, args.payment)
+    if not payment['receipt_confirmed']:
+        raise ValueError('Receipt must be confirmed for the accepted situation-statement wording')
     folder = Path(args.folder).resolve()
     expected = set(IMAGES + list(DOCS.values()))
     actual = {p.name for p in folder.iterdir() if not p.name.startswith('.')}
@@ -72,6 +74,7 @@ def check(args):
         if actual_text != expected_text:
             raise ValueError('Document does not agree with verified facts/template: ' + name)
     return {'structural_check': 'passed', 'files': 9, 'screenshots': checks, 'word_facts': 'matched',
+            'party_scope': party_facts(profile),
             'visual_review': 'Agent must inspect all seven live pages/screenshots and both rendered Word documents. This checks declared evidence and values, not image semantics or actual browser access.'}
 
 
