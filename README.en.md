@@ -16,8 +16,6 @@ After installation, start a new task:
 
 > Use the Apple remittance skill to prepare bank-receipt materials for my most recent Apple payment.
 
-No reference folder, previous packet, template or advance login is required. To prepare a specific payment instead, include its payment date.
-
 1. The skill opens App Store Connect. If you are not signed in, complete login and verification on the Apple page it opens.
 2. The Agent finds the most recent paid transaction or the date you requested. It asks you to choose only when several teams or payments make the target ambiguous.
 3. The Agent reads company, agreement, bank and payment data from the website, generates documents using the included templates, creates the output folder and verifies the packet.
@@ -31,14 +29,6 @@ Previously accepted samples and bank-specific requirements are optional referenc
 - A packet verification result, including anything missing or still needing confirmation.
 
 Every screenshot retains the browser address bar, excludes tabs and contains no mouse pointer. The login page shows the entered account and a visible empty password field. Each payment is checked anew; previous amounts or accounts are not reused as facts.
-
-## Before you use it
-
-- The Agent needs browser/computer tools that can access your authorized developer account and the relevant payment, company and bank pages.
-- Includes templates with Chinese and English fields; supports CNY, USD, EUR, HKD and GBP. Your own accepted layout can be retained. Company, Apple contracting party and bank details come from your evidence.
-- The nine files are a reference packet; your bank determines its actual requirements. Acceptance is not guaranteed, and these do not replace a business licence, full agreements or bank-specific forms. An Apple paid status does not establish bank receipt.
-- Personal profiles, real screenshots and generated documents stay locally and are not committed with the shared skill. The public package contains anonymous templates and fictitious examples only.
-- The Agent does not automatically change bank settings, submit materials or send them to a bank.
 
 ## License
 
